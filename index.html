@@ -2,39 +2,274 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Diamond Pro X</title>
+<title>Ai-Analyzer : Diamonds Print</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { font-family:Arial; background:#eef2f7; margin:0; text-align:center; }
-.header { background:#111; color:#fff; padding:12px; font-size:18px; }
-.card { background:#fff; margin:10px; padding:12px; border-radius:10px; }
-#qrText { font-size:20px; font-weight:bold; }
-input { font-size:20px; padding:10px; width:90%; margin:5px; }
-button { padding:10px; margin:5px; border:none; border-radius:6px; background:#2563eb; color:white; }
-.total { font-size:18px; color:green; }
+body {
+  font-family:-apple-system, BlinkMacSystemFont;
+  background:#f2f2f7;
+  margin:0;
+  text-align:center;
+}
+
+/* Header */
+.header {
+  font-size:20px;
+  font-weight:600;
+  padding:15px;
+}
+
+/* Cards */
+.card {
+  background:white;
+  margin:12px;
+  padding:15px;
+  border-radius:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Buttons */
+.btn {
+  background:#007aff;
+  color:white;
+  padding:15px;
+  margin:10px;
+  border:none;
+  border-radius:15px;
+  font-size:18px;
+  width:85%;
+}
+
+/* QR Text */
+#qrText, #qrText2 {
+  font-size:20px;
+  font-weight:bold;
+  margin:10px;
+  color:#111;
+}
+
+/* Inputs */
+input {
+  font-size:22px;
+  padding:12px;
+  width:90%;
+  border-radius:12px;
+  border:1px solid #ddd;
+}
+
+/* Keypad */
+.keypad button {
+  width:30%;
+  padding:18px;
+  margin:5px;
+  font-size:20px;
+  border.keypad button {
+  width:30%;
+  padding:15px;
+  margin:5px;
+  font-size:20px;
+  border-radius:12px;
+  border:none;
+  background:#e5e5ea;
+}
+
+/* Table */
+table {
+  width:100%;
+  font-size:14px;
+}
+td, th {
+  padding:5px;
+}
 </style>
 </head>
 
 <body>
 
-<div class="header">💎 Diamond Pro X</div>
-
-<div class="card">
-<input id="username" placeholder="User Name">
-<input id="remark" placeholder="Remark (Farasha Order)">
-<button onclick="saveUser()">Save</button>
+<!-- HOME -->
+<div id="home">
+  <div class="card">
+    <h2>Diamond App</h2>
+    <input id="username" placeholder="User Name">
+    <br>
+    <button class="btn" onclick="startQuick()">Quick Mode</button>
+    <button class="btn" onclick="startBatch()">Batch Mode</button>
+  </div>
 </div>
 
-<div class="card">
-<div id="reader"></div>
-<div id="qrText">Scan QR...</div>
+<!-- QUICK -->
+<div id="quick" style="display:none;">
+  <div class="card">
+    <button onclick="goHome()">⬅ Back</button>
+    <div id="reader"></div>
+    <div id="qrText">Scan QR...</div>
+  </div>
+
+  <div class="card">
+    <input id="qWeight" placeholder="0.00">
+    <button class="btn" onclick="printQuick()">Print</button>
+  </div>
+
+  <div class="keypad">
+    <button onclick="addQ('1')">1</button>
+    <button onclick="addQ('2')">2</button>
+    <button onclick="addQ('3')">3</button>
+    <button onclick="addQ('4')">4</button>
+    <button onclick="addQ('5')">5</button>
+    <button onclick="addQ('6')">6</button>
+    <button onclick="addQ('7')">7</button>
+    <button onclick="addQ('8')">8</button>
+    <button onclick="addQ('9')">9</button>
+    <button onclick="addQ('.')">.</button>
+    <button onclick="addQ('0')">0</button>
+    <button onclick="clearQ()">C</button>
+  </div>
 </div>
 
-<div class="card">
-<input id="weight" placeholder="0.00">
-<button onclick="startVoice()">🎤 Speak</button>
-<button onclick="manualPrint()">Print</button>
+<!-- BATCH -->
+<div id="batch" style="display:none;">
+  <div class="card">
+    <button onclick="goHome()">⬅ Back</button>
+    <div id="reader2"></div>
+    <div id="qrText2">Scan QR...</div>
+  </div>
+
+  <div class="card">
+    <input id="bWeight" placeholder="0.00">
+    <button class="btn" onclick="saveBatch()">Save + Print</button>
+  </div>
+
+  <div class="keypad">
+    <button onclick="addB('1')">1</button>
+    <button onclick="addB('2')">2</button>
+    <button onclick="addB('3')">3</button>
+    <button onclick="addB('4')">4</button>
+    <button onclick="addB('5')">5</button>
+    <button onclick="addB('6')">6</button>
+    <button onclick="addB('7')">7</button>
+    <button onclick="addB('8')">8</button>
+    <button onclick="addB('9')">9</button>
+    <button onclick="addB('.')">.</button>
+    <button onclick="addB('0')">0</button>
+    <button onclick="clearB()">C</button>
+  </div>
+
+  <div class="card">
+    <table id="list">
+      <tr><th>QR</th><th>CT</th></tr>
+    </table>
+    <h3 id="total">Total: 0</h3>
+  </div>
+</div>
+
+<script>
+let qQR="", bQR="", batch=[];
+
+// Save username
+window.onload=()=>{
+ let u=localStorage.getItem("user");
+ if(u) document.getElementById("username").value=u;
+};
+
+// Navigation
+function startQuick(){
+ saveUser();
+ document.getElementById("home").style.display="none";
+ document.getElementById("quick").style.display="block";
+ startScanner1();
+}
+
+function startBatch(){
+ saveUser();
+ document.getElementById("home").style.display="none";
+ document.getElementById("batch").style.display="block";
+ startScanner2();
+}
+
+function goHome(){
+ location.reload();
+}
+
+function saveUser(){
+ localStorage.setItem("user",document.getElementById("username").value);
+}
+
+// Scanner QUICK
+function startScanner1(){
+ new Html5Qrcode("reader").start(
+  {facingMode:"environment"},
+  {fps:10,qrbox:250},
+  txt=>{
+    qQR=txt;
+    document.getElementById("qrText").innerText=txt;
+  }
+ );
+}
+
+// Scanner BATCH
+function startScanner2(){
+ new Html5Qrcode("reader2").start(
+  {facingMode:"environment"},
+  {fps:10,qrbox:250},
+  txt=>{
+    bQR=txt;
+    document.getElementById("qrText2").innerText=txt;
+  }
+ );
+}
+
+// Quick keypad
+function addQ(n){ document.getElementById("qWeight").value+=n; }
+function clearQ(){ document.getElementById("qWeight").value=""; }
+
+// Batch keypad
+function addB(n){ document.getElementById("bWeight").value+=n; }
+function clearB(){ document.getElementById("bWeight").value=""; }
+
+// Quick print
+function printQuick(){
+ let w=document.getElementById("qWeight").value;
+ if(!qQR||!w) return;
+
+ let win=window.open("");
+ win.document.write(`<h2>${qQR}</h2><h1>${w} CT</h1>`);
+ win.print();
+}
+
+// Batch save
+function saveBatch(){
+ let w=document.getElementById("bWeight").value;
+ if(!bQR||!w) return;
+
+ batch.push({qr:bQR,w:w});
+ updateTable();
+
+ let win=window.open("");
+ win.document.write(`<h2>${bQR}</h2><h1>${w} CT</h1>`);
+ win.print();
+
+ document.getElementById("bWeight").value="";
+}
+
+// Table
+function updateTable(){
+ let t=document.getElementById("list");
+ t.innerHTML="<tr><th>QR</th><th>CT</th></tr>";
+
+ let total=0;
+
+ batch.forEach(i=>{
+  t.innerHTML+=`<tr><td>${i.qr}</td><td>${i.w}</td></tr>`;
+  total+=parseFloat(i.w);
+ });
+
+ document.getElementById("total").innerText="Total: "+total.toFixed(2);
+}
+</script>
+
+</body>
+</html><button onclick="manualPrint()">Print</button>
 </div>
 
 <div class="card">
