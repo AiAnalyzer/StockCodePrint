@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick Mode</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body { font-family: Arial; background:#fafafa; text-align:center; }
+#qr { font-size:20px; font-weight:bold; margin:10px; }
+input { font-size:22px; padding:10px; width:80%; }
+button {
+  padding:15px;
+  margin:5px;
+  font-size:18px;
+  border:none;
+  background:#1976d2;
+  color:white;
+  border-radius:8px;
+}
+.keypad button {
+  width:30%;
+  background:#e0e0e0;
+  color:black;
+}
+</style>
+</head>
+
+<body>
+
+<button onclick="location.href='index.html'">⬅ Back</button>
+
+<div id="reader"></div>
+<div id="qr">Scan QR...</div>
+
+<input id="weight" placeholder="0.00">
+
+<button onclick="print()">Print</button>
+
+<div class="keypad">
+<button onclick="add('1')">1</button>
+<button onclick="add('2')">2</button>
+<button onclick="add('3')">3</button>
+<button onclick="add('4')">4</button>
+<button onclick="add('5')">5</button>
+<button onclick="add('6')">6</button>
+<button onclick="add('7')">7</button>
+<button onclick="add('8')">8</button>
+<button onclick="add('9')">9</button>
+<button onclick="add('.')">.</button>
+<button onclick="add('0')">0</button>
+<button onclick="clearW()">C</button>
+</div>
+
+<script>
+let qr="";
+
+new Html5Qrcode("reader").start(
+ {facingMode:"environment"},
+ {fps:10,qrbox:250},
+ txt=>{
+   qr=txt;
+   document.getElementById("qr").innerText=txt;
+ }
+);
+
+function add(n){ weight.value+=n; }
+function clearW(){ weight.value=""; }
+
+function print(){
+ if(!qr || !weight.value) return;
+ let w=window.open("");
+ w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
+ w.print();
+}
+</script>
+
+</body>
+</html>
