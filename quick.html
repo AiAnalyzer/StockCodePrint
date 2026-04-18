@@ -6,35 +6,97 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { font-family: Arial; background:#fafafa; text-align:center; }
-#qr { font-size:20px; font-weight:bold; margin:10px; }
-input { font-size:22px; padding:10px; width:80%; }
-button {
-  padding:15px;
-  margin:5px;
-  font-size:18px;
+body { margin:0; font-family:Arial; text-align:center; }
+
+#top { height:45%; }
+#reader { height:70%; }
+#qr { font-size:16px; font-weight:bold; padding:5px; }
+
+#bottom { height:55%; }
+
+#weight {
+  font-size:28px;
+  padding:10px;
+  width:90%;
+  text-align:center;
+}
+
+.keypad {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:8px;
+  padding:10px;
+}
+
+.keypad button {
+  font-size:22px;
+  padding:18px;
   border:none;
+  border-radius:10px;
+  background:#e0e0e0;
+}
+
+.action {
   background:#1976d2;
   color:white;
-  border-radius:8px;
-}
-.keypad button {
-  width:30%;
-  background:#e0e0e0;
-  color:black;
 }
 </style>
 </head>
 
 <body>
 
-<button onclick="location.href='index.html'">⬅ Back</button>
-
+<div id="top">
+<button onclick="location.href='index.html'">⬅</button>
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
+</div>
 
+<div id="bottom">
 <input id="weight" placeholder="0.00">
 
+<div class="keypad">
+<button onclick="add('1')">1</button>
+<button onclick="add('2')">2</button>
+<button onclick="add('3')">3</button>
+<button onclick="add('4')">4</button>
+<button onclick="add('5')">5</button>
+<button onclick="add('6')">6</button>
+<button onclick="add('7')">7</button>
+<button onclick="add('8')">8</button>
+<button onclick="add('9')">9</button>
+<button onclick="add('.')">.</button>
+<button onclick="add('0')">0</button>
+<button onclick="clearW()">C</button>
+<button class="action" style="grid-column: span 3;" onclick="print()">PRINT</button>
+</div>
+</div>
+
+<script>
+let qr="";
+
+new Html5Qrcode("reader").start(
+ {facingMode:"environment"},
+ {fps:10,qrbox:200},
+ txt=>{
+   qr=txt;
+   document.getElementById("qr").innerText=txt;
+ }
+);
+
+function add(n){ weight.value+=n; }
+function clearW(){ weight.value=""; }
+
+function print(){
+ if(!qr || !weight.value) return;
+
+ let w=window.open("");
+ w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
+ w.print();
+}
+</script>
+
+</body>
+</html>
 <button onclick="print()">Print</button>
 
 <div class="keypad">
