@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diamond Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial; text-align: center; background:#f5f5f5; }
+    h2 { margin-top:20px; }
+    #reader { width:300px; margin:auto; }
+    input {
+      font-size: 24px;
+      padding: 10px;
+      width: 200px;
+      text-align: center;
+      margin: 10px;
+    }
+    button {
+      font-size: 18px;
+      padding: 10px 15px;
+      margin: 5px;
+    }
+    #result {
+      margin-top:15px;
+      font-weight:bold;
+      color:green;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Diamond QR Scanner</h2>
+
+<div id="reader"></div>
+
+<p id="result">Scan QR Code...</p>
+
+<h2>Enter Carat Weight</h2>
+
+<input id="weight" placeholder="0.00" readonly>
+
+<br>
+
+<div>
+  <button onclick="addNum('1')">1</button>
+  <button onclick="addNum('2')">2</button>
+  <button onclick="addNum('3')">3</button><br>
+  <button onclick="addNum('4')">4</button>
+  <button onclick="addNum('5')">5</button>
+  <button onclick="addNum('6')">6</button><br>
+  <button onclick="addNum('7')">7</button>
+  <button onclick="addNum('8')">8</button>
+  <button onclick="addNum('9')">9</button><br>
+  <button onclick="addNum('.')">.</button>
+  <button onclick="addNum('0')">0</button>
+  <button onclick="clearInput()">C</button>
+</div>
+
+<br>
+
+<button onclick="startVoice()">Speak Weight</button>
+
+<script>
+  function onScanSuccess(decodedText) {
+    document.getElementById("result").innerText = "QR: " + decodedText;
+  }
+
+  let scanner = new Html5Qrcode("reader");
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess
+  );
+
+  function addNum(num) {
+    let input = document.getElementById("weight");
+    input.value += num;
+  }
+
+  function clearInput() {
+    document.getElementById("weight").value = "";
+  }
+
+  function startVoice() {
+    let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.start();
+
+    recognition.onresult = function(event) {
+      let speech = event.results[0][0].transcript;
+      speech = speech.replace(/one/gi,"1").replace(/two/gi,"2").replace(/three/gi,"3")
+                     .replace(/four/gi,"4").replace(/five/gi,"5").replace(/six/gi,"6")
+                     .replace(/seven/gi,"7").replace(/eight/gi,"8").replace(/nine/gi,"9")
+                     .replace(/zero/gi,"0").replace(/point/gi,".");
+      document.getElementById("weight").value = speech;
+    };
+  }
+</script>
+
+</body>
+</html>
