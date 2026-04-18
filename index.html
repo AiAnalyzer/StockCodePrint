@@ -5,19 +5,38 @@
 <title>Ai-Analyzer : Diamonds Print</title>
 
 <style>
-body { font-family: Arial; background:#fafafa; text-align:center; }
-.container { margin-top:40px; }
-input {
-  padding:12px;
-  width:80%;
-  font-size:18px;
-  margin:10px;
+body {
+  font-family: Arial;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+  background:#f5f5f5;
 }
-button {
-  width:80%;
+
+.container {
+  text-align:center;
+  width:90%;
+}
+
+h1 {
+  font-size:28px;
+  margin-bottom:30px;
+}
+
+input {
+  width:100%;
   padding:15px;
-  margin:10px;
   font-size:18px;
+  margin-bottom:20px;
+}
+
+button {
+  width:100%;
+  padding:15px;
+  font-size:18px;
+  margin:10px 0;
   border:none;
   border-radius:8px;
   background:#1976d2;
@@ -29,12 +48,30 @@ button {
 <body>
 
 <div class="container">
-<h2>Ai-Analyzer : Diamonds Print</h2>
+<h1>Ai-Analyzer : Diamonds Print</h1>
 
 <input id="user" placeholder="Enter User Name">
 
-<br>
+<button onclick="goQuick()">Quick Mode</button>
+<button onclick="goBatch()">Batch Mode</button>
+</div>
 
+<script>
+window.onload=()=>{
+ let u=localStorage.getItem("user");
+ if(u) user.value=u;
+};
+
+function save(){
+ localStorage.setItem("user",user.value);
+}
+
+function goQuick(){ save(); location.href="quick.html"; }
+function goBatch(){ save(); location.href="batch.html"; }
+</script>
+
+</body>
+</html>
 <button onclick="goQuick()">Quick Mode</button>
 <button onclick="goBatch()">Batch Mode</button>
 </div>
