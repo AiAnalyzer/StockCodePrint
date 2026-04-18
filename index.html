@@ -3,38 +3,65 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ai-Analyzer : Diamonds Print</title>
-<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body {
-  font-family:-apple-system, BlinkMacSystemFont;
-  background:#f2f2f7;
-  margin:0;
-  text-align:center;
+body { font-family: Arial; background:#fafafa; text-align:center; }
+.container { margin-top:40px; }
+input {
+  padding:12px;
+  width:80%;
+  font-size:18px;
+  margin:10px;
 }
-
-/* Header */
-.header {
-  font-size:20px;
-  font-weight:600;
-  padding:15px;
-}
-
-/* Cards */
-.card {
-  background:white;
-  margin:12px;
-  padding:15px;
-  border-radius:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.05);
-}
-
-/* Buttons */
-.btn {
-  background:#007aff;
-  color:white;
+button {
+  width:80%;
   padding:15px;
   margin:10px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  background:#1976d2;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Ai-Analyzer : Diamonds Print</h2>
+
+<input id="user" placeholder="Enter User Name">
+
+<br>
+
+<button onclick="goQuick()">Quick Mode</button>
+<button onclick="goBatch()">Batch Mode</button>
+</div>
+
+<script>
+window.onload = ()=>{
+  let u = localStorage.getItem("user");
+  if(u) document.getElementById("user").value = u;
+};
+
+function goQuick(){
+  saveUser();
+  location.href="quick.html";
+}
+
+function goBatch(){
+  saveUser();
+  location.href="batch.html";
+}
+
+function saveUser(){
+  localStorage.setItem("user", document.getElementById("user").value);
+}
+</script>
+
+</body>
+</html>  margin:10px;
   border:none;
   border-radius:15px;
   font-size:18px;
