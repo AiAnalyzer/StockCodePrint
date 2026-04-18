@@ -6,35 +6,109 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { margin:0; font-family:Arial; text-align:center; }
+body { margin:0; font-family:Arial; background:#fafafa; text-align:center; }
 
-#top { height:45%; }
-#reader { height:70%; }
 #qr { font-size:16px; font-weight:bold; padding:5px; }
 
-#bottom { height:55%; }
-
-#weight {
-  font-size:28px;
+input {
+  font-size:32px;
   padding:10px;
   width:90%;
   text-align:center;
+  border:none;
+  background:white;
 }
 
 .keypad {
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:8px;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
   padding:10px;
 }
 
 .keypad button {
-  font-size:22px;
+  font-size:24px;
   padding:18px;
   border:none;
   border-radius:10px;
   background:#e0e0e0;
 }
+
+.keypad button:active {
+  background:#bdbdbd;
+  transform:scale(0.95);
+}
+
+.action {
+  background:#1976d2 !important;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<button onclick="location.href='index.html'">⬅</button>
+
+<div id="reader"></div>
+<div id="qr">Scan QR...</div>
+
+<input id="weight" readonly placeholder="0.00">
+
+<div class="keypad">
+<button onclick="add('1')">1</button>
+<button onclick="add('2')">2</button>
+<button onclick="add('3')">3</button>
+<button onclick="add('4')">4</button>
+<button onclick="add('5')">5</button>
+<button onclick="add('6')">6</button>
+<button onclick="add('7')">7</button>
+<button onclick="add('8')">8</button>
+<button onclick="add('9')">9</button>
+<button onclick="add('.')">.</button>
+<button onclick="add('0')">0</button>
+<button onclick="del()">⌫</button>
+<button onclick="clearW()">C</button>
+<button class="action" style="grid-column:span 2;" onclick="print()">PRINT</button>
+</div>
+
+<script>
+let qr="";
+
+new Html5Qrcode("reader").start(
+ {facingMode:"environment"},
+ {fps:10,qrbox:200},
+ txt=>{
+   qr=txt;
+   qrText.innerText=txt;
+   weight.focus();
+ }
+);
+
+function add(n){
+ if(n==="." && weight.value.includes(".")) return;
+ weight.value += n;
+}
+
+function del(){
+ weight.value = weight.value.slice(0,-1);
+}
+
+function clearW(){
+ weight.value="";
+}
+
+function print(){
+ if(!qr || !weight.value) return;
+
+ let w=window.open("");
+ w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
+ w.print();
+}
+</script>
+
+</body>
+</html>}
 
 .action {
   background:#1976d2;
