@@ -1,40 +1,196 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Diamond Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body { font-family: Arial; text-align: center; background:#f5f5f5; }
-    h2 { margin-top:20px; }
-    #reader { width:300px; margin:auto; }
-    input {
-      font-size: 24px;
-      padding: 10px;
-      width: 200px;
-      text-align: center;
-      margin: 10px;
-    }
-    button {
-      font-size: 18px;
-      padding: 10px 15px;
-      margin: 5px;
-    }
-    #result {
-      margin-top:15px;
-      font-weight:bold;
-      color:green;
-    }
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diamond Pro X</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body { font-family:Arial; background:#eef2f7; margin:0; text-align:center; }
+.header { background:#111; color:#fff; padding:12px; font-size:18px; }
+.card { background:#fff; margin:10px; padding:12px; border-radius:10px; }
+#qrText { font-size:20px; font-weight:bold; }
+input { font-size:20px; padding:10px; width:90%; margin:5px; }
+button { padding:10px; margin:5px; border:none; border-radius:6px; background:#2563eb; color:white; }
+.total { font-size:18px; color:green; }
+</style>
 </head>
 
 <body>
 
-<h2>Diamond QR Scanner</h2>
+<div class="header">💎 Diamond Pro X</div>
 
+<div class="card">
+<input id="username" placeholder="User Name">
+<input id="remark" placeholder="Remark (Farasha Order)">
+<button onclick="saveUser()">Save</button>
+</div>
+
+<div class="card">
 <div id="reader"></div>
+<div id="qrText">Scan QR...</div>
+</div>
 
-<p id="result">Scan QR Code...</p>
+<div class="card">
+<input id="weight" placeholder="0.00">
+<button onclick="startVoice()">🎤 Speak</button>
+<button onclick="manualPrint()">Print</button>
+</div>
+
+<div class="card">
+<div class="total" id="total">Total: 0.00 | Items: 0</div>
+<button onclick="clearBatch()">Clear</button>
+<button onclick="exportPDF()">📄 Export & Share</button>
+</div>
+
+<script>
+let currentQR="", batch=[];
+
+// Load user
+window.onload=()=>{
+ let u=localStorage.getItem("user");
+ if(u) document.getElementById("username").value=u;
+};
+
+// Save user
+function saveUser(){
+ localStorage.setItem("user",document.getElementById("username").value);
+}
+
+// Speak
+function speak(t){
+ speechSynthesis.cancel();
+ speechSynthesis.speak(new SpeechSynthesisUtterance(t));
+}
+
+// Beep
+function beep(){
+ let ctx=new AudioContext();
+ let o=ctx.createOscillator();
+ o.connect(ctx.destination);
+ o.start();
+ setTimeout(()=>o.stop(),120);
+}
+
+// QR Scan
+function onScanSuccess(text){
+ currentQR=text;
+ document.getElementById("qrText").innerText=text;
+
+ let speakText=text.replace(/\|/g," ");
+ speak(speakText);
+
+ setTimeout(()=>{
+   beep();
+   startVoice();
+ },1200);
+}
+
+let scanner=new Html5Qrcode("reader");
+scanner.start({facingMode:"environment"},{fps:12,qrbox:250},onScanSuccess);
+
+// Voice
+function startVoice(){
+ let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+ rec.start();
+
+ rec.onresult=(e)=>{
+   let t=e.results[0][0].transcript;
+
+   t=t.replace(/one/gi,"1").replace(/two/gi,"2")
+      .replace(/three/gi,"3").replace(/four/gi,"4")
+      .replace(/five/gi,"5").replace(/six/gi,"6")
+      .replace(/seven/gi,"7").replace(/eight/gi,"8")
+      .replace(/nine/gi,"9").replace(/zero/gi,"0")
+      .replace(/point/gi,".");
+
+   t=parseFloat(t).toFixed(2);
+
+   document.getElementById("weight").value=t;
+
+   speak(t+" carat");
+
+   setTimeout(saveAndPrint,700);
+ };
+}
+
+// Manual
+function manualPrint(){
+ saveAndPrint();
+}
+
+// Save + print
+function saveAndPrint(){
+ let w=document.getElementById("weight").value;
+ if(!currentQR||!w) return;
+
+ batch.push({qr:currentQR,weight:w});
+ updateStats();
+
+ let parts=currentQR.split("|");
+
+ let win=window.open("","","width=300,height=200");
+ win.document.write(`
+   <div style="text-align:center;font-size:18px">
+   <b>${parts[0]}</b><br>
+   ${parts.slice(1).join("|")}<br>
+   <h1>${w} CT</h1>
+   </div>
+ `);
+ win.print();
+
+ document.getElementById("weight").value="";
+}
+
+// Stats
+function updateStats(){
+ let total=0;
+ batch.forEach(i=>total+=parseFloat(i.weight));
+ document.getElementById("total").innerText=
+ "Total: "+total.toFixed(2)+" | Items: "+batch.length;
+}
+
+// Clear
+function clearBatch(){
+ batch=[];
+ updateStats();
+}
+
+// Export + Share
+function exportPDF(){
+ let user=document.getElementById("username").value;
+ let remark=document.getElementById("remark").value;
+ let date=new Date().toLocaleString();
+
+ let html=`<h2>Diamond Batch</h2>
+ <p>User: ${user}</p>
+ <p>Remark: ${remark}</p>
+ <p>Date: ${date}</p>
+ <table border="1" width="100%">
+ <tr><th>QR</th><th>Weight</th></tr>`;
+
+ batch.forEach(i=>{
+   html+=`<tr><td>${i.qr}</td><td>${i.weight}</td></tr>`;
+ });
+
+ html+="</table>";
+
+ let win=window.open("");
+ win.document.write(html);
+ win.print();
+
+ // Share
+ if(navigator.share){
+   navigator.share({
+     title:"Diamond Batch",
+     text:"Batch ready for sharing"
+   });
+ }
+}
+</script>
+
+</body>
+</html><p id="result">Scan QR Code...</p>
 
 <h2>Enter Carat Weight</h2>
 
