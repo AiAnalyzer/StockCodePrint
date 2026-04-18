@@ -6,35 +6,118 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { font-family: Arial; background:#fafafa; text-align:center; }
-#qr { font-size:20px; font-weight:bold; }
-input { font-size:22px; padding:10px; width:80%; }
-button {
-  padding:12px;
-  margin:5px;
-  border:none;
-  background:#1976d2;
-  color:white;
+body { margin:0; font-family:Arial; text-align:center; }
+
+#top { height:40%; }
+#reader { height:60%; }
+#qr { font-size:14px; font-weight:bold; }
+
+#middle { height:25%; }
+
+#bottom { height:35%; overflow:auto; }
+
+input {
+  font-size:24px;
+  padding:10px;
+  width:90%;
+  text-align:center;
 }
-table { width:100%; margin-top:10px; }
-td, th { padding:5px; border-bottom:1px solid #ccc; }
+
+.keypad {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:5px;
+}
+
+.keypad button {
+  padding:12px;
+  font-size:18px;
+}
+
+table { width:100%; font-size:12px; }
 </style>
 </head>
 
 <body>
 
-<button onclick="location.href='index.html'">⬅ Back</button>
-
+<div id="top">
+<button onclick="location.href='index.html'">⬅</button>
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
+</div>
 
+<div id="middle">
 <input id="weight" placeholder="0.00">
 
-<button onclick="save()">Save + Print</button>
+<div class="keypad">
+<button onclick="add('1')">1</button>
+<button onclick="add('2')">2</button>
+<button onclick="add('3')">3</button>
+<button onclick="add('4')">4</button>
+<button onclick="add('5')">5</button>
+<button onclick="add('6')">6</button>
+<button onclick="add('7')">7</button>
+<button onclick="add('8')">8</button>
+<button onclick="add('9')">9</button>
+<button onclick="add('.')">.</button>
+<button onclick="add('0')">0</button>
+<button onclick="clearW()">C</button>
+<button style="grid-column: span 3;" onclick="save()">SAVE + PRINT</button>
+</div>
+</div>
 
+<div id="bottom">
 <table id="list">
 <tr><th>QR</th><th>CT</th></tr>
 </table>
+<h3 id="total">Total: 0</h3>
+</div>
+
+<script>
+let qr="", batch=[];
+
+new Html5Qrcode("reader").start(
+ {facingMode:"environment"},
+ {fps:10,qrbox:200},
+ txt=>{
+   qr=txt;
+   document.getElementById("qr").innerText=txt;
+ }
+);
+
+function add(n){ weight.value+=n; }
+function clearW(){ weight.value=""; }
+
+function save(){
+ if(!qr || !weight.value) return;
+
+ batch.push({qr:qr,w:weight.value});
+ update();
+
+ let w=window.open("");
+ w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
+ w.print();
+
+ weight.value="";
+}
+
+function update(){
+ let t=document.getElementById("list");
+ t.innerHTML="<tr><th>QR</th><th>CT</th></tr>";
+
+ let total=0;
+
+ batch.forEach(i=>{
+  t.innerHTML+=`<tr><td>${i.qr}</td><td>${i.w}</td></tr>`;
+  total+=parseFloat(i.w);
+ });
+
+ document.getElementById("total").innerText="Total: "+total.toFixed(2);
+}
+</script>
+
+</body>
+</html></table>
 
 <h3 id="total">Total: 0</h3>
 
