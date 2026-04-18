@@ -6,41 +6,47 @@
 
 <style>
 body {
-  font-family: Arial;
+  margin:0;
+  font-family:Arial;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
-  margin:0;
-  background:#f5f5f5;
+  background:#f4f6f8;
 }
 
 .container {
-  text-align:center;
   width:90%;
+  text-align:center;
 }
 
 h1 {
-  font-size:28px;
-  margin-bottom:30px;
+  font-size:30px;
+  margin-bottom:40px;
 }
 
 input {
   width:100%;
   padding:15px;
   font-size:18px;
-  margin-bottom:20px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  margin-bottom:25px;
 }
 
 button {
   width:100%;
-  padding:15px;
+  padding:16px;
   font-size:18px;
-  margin:10px 0;
+  margin:12px 0;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:#1976d2;
   color:white;
+}
+
+button:active {
+  transform:scale(0.97);
 }
 </style>
 </head>
@@ -48,12 +54,14 @@ button {
 <body>
 
 <div class="container">
+
 <h1>Ai-Analyzer : Diamonds Print</h1>
 
 <input id="user" placeholder="Enter User Name">
 
 <button onclick="goQuick()">Quick Mode</button>
 <button onclick="goBatch()">Batch Mode</button>
+
 </div>
 
 <script>
@@ -66,491 +74,15 @@ function save(){
  localStorage.setItem("user",user.value);
 }
 
-function goQuick(){ save(); location.href="quick.html"; }
-function goBatch(){ save(); location.href="batch.html"; }
-</script>
-
-</body>
-</html>
-<button onclick="goQuick()">Quick Mode</button>
-<button onclick="goBatch()">Batch Mode</button>
-</div>
-
-<script>
-window.onload = ()=>{
-  let u = localStorage.getItem("user");
-  if(u) document.getElementById("user").value = u;
-};
-
 function goQuick(){
-  saveUser();
-  location.href="quick.html";
+ save();
+ location.href="quick.html";
 }
 
 function goBatch(){
-  saveUser();
-  location.href="batch.html";
+ save();
+ location.href="batch.html";
 }
-
-function saveUser(){
-  localStorage.setItem("user", document.getElementById("user").value);
-}
-</script>
-
-</body>
-</html>  margin:10px;
-  border:none;
-  border-radius:15px;
-  font-size:18px;
-  width:85%;
-}
-
-/* QR Text */
-#qrText, #qrText2 {
-  font-size:20px;
-  font-weight:bold;
-  margin:10px;
-  color:#111;
-}
-
-/* Inputs */
-input {
-  font-size:22px;
-  padding:12px;
-  width:90%;
-  border-radius:12px;
-  border:1px solid #ddd;
-}
-
-/* Keypad */
-.keypad button {
-  width:30%;
-  padding:18px;
-  margin:5px;
-  font-size:20px;
-  border.keypad button {
-  width:30%;
-  padding:15px;
-  margin:5px;
-  font-size:20px;
-  border-radius:12px;
-  border:none;
-  background:#e5e5ea;
-}
-
-/* Table */
-table {
-  width:100%;
-  font-size:14px;
-}
-td, th {
-  padding:5px;
-}
-</style>
-</head>
-
-<body>
-
-<!-- HOME -->
-<div id="home">
-  <div class="card">
-    <h2>Diamond App</h2>
-    <input id="username" placeholder="User Name">
-    <br>
-    <button class="btn" onclick="startQuick()">Quick Mode</button>
-    <button class="btn" onclick="startBatch()">Batch Mode</button>
-  </div>
-</div>
-
-<!-- QUICK -->
-<div id="quick" style="display:none;">
-  <div class="card">
-    <button onclick="goHome()">⬅ Back</button>
-    <div id="reader"></div>
-    <div id="qrText">Scan QR...</div>
-  </div>
-
-  <div class="card">
-    <input id="qWeight" placeholder="0.00">
-    <button class="btn" onclick="printQuick()">Print</button>
-  </div>
-
-  <div class="keypad">
-    <button onclick="addQ('1')">1</button>
-    <button onclick="addQ('2')">2</button>
-    <button onclick="addQ('3')">3</button>
-    <button onclick="addQ('4')">4</button>
-    <button onclick="addQ('5')">5</button>
-    <button onclick="addQ('6')">6</button>
-    <button onclick="addQ('7')">7</button>
-    <button onclick="addQ('8')">8</button>
-    <button onclick="addQ('9')">9</button>
-    <button onclick="addQ('.')">.</button>
-    <button onclick="addQ('0')">0</button>
-    <button onclick="clearQ()">C</button>
-  </div>
-</div>
-
-<!-- BATCH -->
-<div id="batch" style="display:none;">
-  <div class="card">
-    <button onclick="goHome()">⬅ Back</button>
-    <div id="reader2"></div>
-    <div id="qrText2">Scan QR...</div>
-  </div>
-
-  <div class="card">
-    <input id="bWeight" placeholder="0.00">
-    <button class="btn" onclick="saveBatch()">Save + Print</button>
-  </div>
-
-  <div class="keypad">
-    <button onclick="addB('1')">1</button>
-    <button onclick="addB('2')">2</button>
-    <button onclick="addB('3')">3</button>
-    <button onclick="addB('4')">4</button>
-    <button onclick="addB('5')">5</button>
-    <button onclick="addB('6')">6</button>
-    <button onclick="addB('7')">7</button>
-    <button onclick="addB('8')">8</button>
-    <button onclick="addB('9')">9</button>
-    <button onclick="addB('.')">.</button>
-    <button onclick="addB('0')">0</button>
-    <button onclick="clearB()">C</button>
-  </div>
-
-  <div class="card">
-    <table id="list">
-      <tr><th>QR</th><th>CT</th></tr>
-    </table>
-    <h3 id="total">Total: 0</h3>
-  </div>
-</div>
-
-<script>
-let qQR="", bQR="", batch=[];
-
-// Save username
-window.onload=()=>{
- let u=localStorage.getItem("user");
- if(u) document.getElementById("username").value=u;
-};
-
-// Navigation
-function startQuick(){
- saveUser();
- document.getElementById("home").style.display="none";
- document.getElementById("quick").style.display="block";
- startScanner1();
-}
-
-function startBatch(){
- saveUser();
- document.getElementById("home").style.display="none";
- document.getElementById("batch").style.display="block";
- startScanner2();
-}
-
-function goHome(){
- location.reload();
-}
-
-function saveUser(){
- localStorage.setItem("user",document.getElementById("username").value);
-}
-
-// Scanner QUICK
-function startScanner1(){
- new Html5Qrcode("reader").start(
-  {facingMode:"environment"},
-  {fps:10,qrbox:250},
-  txt=>{
-    qQR=txt;
-    document.getElementById("qrText").innerText=txt;
-  }
- );
-}
-
-// Scanner BATCH
-function startScanner2(){
- new Html5Qrcode("reader2").start(
-  {facingMode:"environment"},
-  {fps:10,qrbox:250},
-  txt=>{
-    bQR=txt;
-    document.getElementById("qrText2").innerText=txt;
-  }
- );
-}
-
-// Quick keypad
-function addQ(n){ document.getElementById("qWeight").value+=n; }
-function clearQ(){ document.getElementById("qWeight").value=""; }
-
-// Batch keypad
-function addB(n){ document.getElementById("bWeight").value+=n; }
-function clearB(){ document.getElementById("bWeight").value=""; }
-
-// Quick print
-function printQuick(){
- let w=document.getElementById("qWeight").value;
- if(!qQR||!w) return;
-
- let win=window.open("");
- win.document.write(`<h2>${qQR}</h2><h1>${w} CT</h1>`);
- win.print();
-}
-
-// Batch save
-function saveBatch(){
- let w=document.getElementById("bWeight").value;
- if(!bQR||!w) return;
-
- batch.push({qr:bQR,w:w});
- updateTable();
-
- let win=window.open("");
- win.document.write(`<h2>${bQR}</h2><h1>${w} CT</h1>`);
- win.print();
-
- document.getElementById("bWeight").value="";
-}
-
-// Table
-function updateTable(){
- let t=document.getElementById("list");
- t.innerHTML="<tr><th>QR</th><th>CT</th></tr>";
-
- let total=0;
-
- batch.forEach(i=>{
-  t.innerHTML+=`<tr><td>${i.qr}</td><td>${i.w}</td></tr>`;
-  total+=parseFloat(i.w);
- });
-
- document.getElementById("total").innerText="Total: "+total.toFixed(2);
-}
-</script>
-
-</body>
-</html><button onclick="manualPrint()">Print</button>
-</div>
-
-<div class="card">
-<div class="total" id="total">Total: 0.00 | Items: 0</div>
-<button onclick="clearBatch()">Clear</button>
-<button onclick="exportPDF()">📄 Export & Share</button>
-</div>
-
-<script>
-let currentQR="", batch=[];
-
-// Load user
-window.onload=()=>{
- let u=localStorage.getItem("user");
- if(u) document.getElementById("username").value=u;
-};
-
-// Save user
-function saveUser(){
- localStorage.setItem("user",document.getElementById("username").value);
-}
-
-// Speak
-function speak(t){
- speechSynthesis.cancel();
- speechSynthesis.speak(new SpeechSynthesisUtterance(t));
-}
-
-// Beep
-function beep(){
- let ctx=new AudioContext();
- let o=ctx.createOscillator();
- o.connect(ctx.destination);
- o.start();
- setTimeout(()=>o.stop(),120);
-}
-
-// QR Scan
-function onScanSuccess(text){
- currentQR=text;
- document.getElementById("qrText").innerText=text;
-
- let speakText=text.replace(/\|/g," ");
- speak(speakText);
-
- setTimeout(()=>{
-   beep();
-   startVoice();
- },1200);
-}
-
-let scanner=new Html5Qrcode("reader");
-scanner.start({facingMode:"environment"},{fps:12,qrbox:250},onScanSuccess);
-
-// Voice
-function startVoice(){
- let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
- rec.start();
-
- rec.onresult=(e)=>{
-   let t=e.results[0][0].transcript;
-
-   t=t.replace(/one/gi,"1").replace(/two/gi,"2")
-      .replace(/three/gi,"3").replace(/four/gi,"4")
-      .replace(/five/gi,"5").replace(/six/gi,"6")
-      .replace(/seven/gi,"7").replace(/eight/gi,"8")
-      .replace(/nine/gi,"9").replace(/zero/gi,"0")
-      .replace(/point/gi,".");
-
-   t=parseFloat(t).toFixed(2);
-
-   document.getElementById("weight").value=t;
-
-   speak(t+" carat");
-
-   setTimeout(saveAndPrint,700);
- };
-}
-
-// Manual
-function manualPrint(){
- saveAndPrint();
-}
-
-// Save + print
-function saveAndPrint(){
- let w=document.getElementById("weight").value;
- if(!currentQR||!w) return;
-
- batch.push({qr:currentQR,weight:w});
- updateStats();
-
- let parts=currentQR.split("|");
-
- let win=window.open("","","width=300,height=200");
- win.document.write(`
-   <div style="text-align:center;font-size:18px">
-   <b>${parts[0]}</b><br>
-   ${parts.slice(1).join("|")}<br>
-   <h1>${w} CT</h1>
-   </div>
- `);
- win.print();
-
- document.getElementById("weight").value="";
-}
-
-// Stats
-function updateStats(){
- let total=0;
- batch.forEach(i=>total+=parseFloat(i.weight));
- document.getElementById("total").innerText=
- "Total: "+total.toFixed(2)+" | Items: "+batch.length;
-}
-
-// Clear
-function clearBatch(){
- batch=[];
- updateStats();
-}
-
-// Export + Share
-function exportPDF(){
- let user=document.getElementById("username").value;
- let remark=document.getElementById("remark").value;
- let date=new Date().toLocaleString();
-
- let html=`<h2>Diamond Batch</h2>
- <p>User: ${user}</p>
- <p>Remark: ${remark}</p>
- <p>Date: ${date}</p>
- <table border="1" width="100%">
- <tr><th>QR</th><th>Weight</th></tr>`;
-
- batch.forEach(i=>{
-   html+=`<tr><td>${i.qr}</td><td>${i.weight}</td></tr>`;
- });
-
- html+="</table>";
-
- let win=window.open("");
- win.document.write(html);
- win.print();
-
- // Share
- if(navigator.share){
-   navigator.share({
-     title:"Diamond Batch",
-     text:"Batch ready for sharing"
-   });
- }
-}
-</script>
-
-</body>
-</html><p id="result">Scan QR Code...</p>
-
-<h2>Enter Carat Weight</h2>
-
-<input id="weight" placeholder="0.00" readonly>
-
-<br>
-
-<div>
-  <button onclick="addNum('1')">1</button>
-  <button onclick="addNum('2')">2</button>
-  <button onclick="addNum('3')">3</button><br>
-  <button onclick="addNum('4')">4</button>
-  <button onclick="addNum('5')">5</button>
-  <button onclick="addNum('6')">6</button><br>
-  <button onclick="addNum('7')">7</button>
-  <button onclick="addNum('8')">8</button>
-  <button onclick="addNum('9')">9</button><br>
-  <button onclick="addNum('.')">.</button>
-  <button onclick="addNum('0')">0</button>
-  <button onclick="clearInput()">C</button>
-</div>
-
-<br>
-
-<button onclick="startVoice()">Speak Weight</button>
-
-<script>
-  function onScanSuccess(decodedText) {
-    document.getElementById("result").innerText = "QR: " + decodedText;
-  }
-
-  let scanner = new Html5Qrcode("reader");
-  scanner.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    onScanSuccess
-  );
-
-  function addNum(num) {
-    let input = document.getElementById("weight");
-    input.value += num;
-  }
-
-  function clearInput() {
-    document.getElementById("weight").value = "";
-  }
-
-  function startVoice() {
-    let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.start();
-
-    recognition.onresult = function(event) {
-      let speech = event.results[0][0].transcript;
-      speech = speech.replace(/one/gi,"1").replace(/two/gi,"2").replace(/three/gi,"3")
-                     .replace(/four/gi,"4").replace(/five/gi,"5").replace(/six/gi,"6")
-                     .replace(/seven/gi,"7").replace(/eight/gi,"8").replace(/nine/gi,"9")
-                     .replace(/zero/gi,"0").replace(/point/gi,".");
-      document.getElementById("weight").value = speech;
-    };
-  }
 </script>
 
 </body>
