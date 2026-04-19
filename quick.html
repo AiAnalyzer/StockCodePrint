@@ -6,41 +6,70 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { margin:0; font-family:Arial; background:#fafafa; text-align:center; }
-
-#qr { font-size:16px; font-weight:bold; padding:5px; }
-
-input {
-  font-size:32px;
-  padding:10px;
-  width:90%;
-  text-align:center;
-  border:none;
-  background:white;
+body{
+  margin:0;
+  font-family:Arial;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
 }
 
-.keypad {
+/* TOP */
+#top{
+  flex:1;
+  background:#000;
+  color:white;
+  display:flex;
+  flex-direction:column;
+}
+
+#reader{
+  flex:1;
+}
+
+#qr{
+  padding:5px;
+  font-size:14px;
+  background:#111;
+}
+
+/* BOTTOM */
+#bottom{
+  flex:1;
+  background:#f4f4f4;
+  text-align:center;
+}
+
+input{
+  font-size:30px;
+  width:90%;
+  padding:10px;
+  margin:5px;
+  text-align:center;
+}
+
+/* KEYPAD */
+.keypad{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:10px;
+  gap:6px;
+  padding:8px;
 }
 
-.keypad button {
-  font-size:24px;
-  padding:18px;
+.keypad button{
+  font-size:22px;
+  padding:15px;
   border:none;
-  border-radius:10px;
+  border-radius:8px;
   background:#e0e0e0;
 }
 
-.keypad button:active {
+.keypad button:active{
   background:#bdbdbd;
-  transform:scale(0.95);
 }
 
-.action {
-  background:#1976d2 !important;
+.action{
+  background:#1976d2;
   color:white;
 }
 </style>
@@ -48,11 +77,13 @@ input {
 
 <body>
 
+<div id="top">
 <button onclick="location.href='index.html'">⬅</button>
-
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
+</div>
 
+<div id="bottom">
 <input id="weight" readonly placeholder="0.00">
 
 <div class="keypad">
@@ -71,27 +102,27 @@ input {
 <button onclick="clearW()">C</button>
 <button class="action" style="grid-column:span 2;" onclick="print()">PRINT</button>
 </div>
+</div>
 
 <script>
 let qr="";
 
 new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:200},
+ { facingMode:"environment" },
+ { fps:10, qrbox:200 },
  txt=>{
    qr=txt;
-   qrText.innerText=txt;
-   weight.focus();
+   document.getElementById("qr").innerText=txt;
  }
 );
 
 function add(n){
  if(n==="." && weight.value.includes(".")) return;
- weight.value += n;
+ weight.value+=n;
 }
 
 function del(){
- weight.value = weight.value.slice(0,-1);
+ weight.value=weight.value.slice(0,-1);
 }
 
 function clearW(){
@@ -101,110 +132,6 @@ function clearW(){
 function print(){
  if(!qr || !weight.value) return;
 
- let w=window.open("");
- w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
- w.print();
-}
-</script>
-
-</body>
-</html>}
-
-.action {
-  background:#1976d2;
-  color:white;
-}
-</style>
-</head>
-
-<body>
-
-<div id="top">
-<button onclick="location.href='index.html'">⬅</button>
-<div id="reader"></div>
-<div id="qr">Scan QR...</div>
-</div>
-
-<div id="bottom">
-<input id="weight" placeholder="0.00">
-
-<div class="keypad">
-<button onclick="add('1')">1</button>
-<button onclick="add('2')">2</button>
-<button onclick="add('3')">3</button>
-<button onclick="add('4')">4</button>
-<button onclick="add('5')">5</button>
-<button onclick="add('6')">6</button>
-<button onclick="add('7')">7</button>
-<button onclick="add('8')">8</button>
-<button onclick="add('9')">9</button>
-<button onclick="add('.')">.</button>
-<button onclick="add('0')">0</button>
-<button onclick="clearW()">C</button>
-<button class="action" style="grid-column: span 3;" onclick="print()">PRINT</button>
-</div>
-</div>
-
-<script>
-let qr="";
-
-new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:200},
- txt=>{
-   qr=txt;
-   document.getElementById("qr").innerText=txt;
- }
-);
-
-function add(n){ weight.value+=n; }
-function clearW(){ weight.value=""; }
-
-function print(){
- if(!qr || !weight.value) return;
-
- let w=window.open("");
- w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
- w.print();
-}
-</script>
-
-</body>
-</html>
-<button onclick="print()">Print</button>
-
-<div class="keypad">
-<button onclick="add('1')">1</button>
-<button onclick="add('2')">2</button>
-<button onclick="add('3')">3</button>
-<button onclick="add('4')">4</button>
-<button onclick="add('5')">5</button>
-<button onclick="add('6')">6</button>
-<button onclick="add('7')">7</button>
-<button onclick="add('8')">8</button>
-<button onclick="add('9')">9</button>
-<button onclick="add('.')">.</button>
-<button onclick="add('0')">0</button>
-<button onclick="clearW()">C</button>
-</div>
-
-<script>
-let qr="";
-
-new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:250},
- txt=>{
-   qr=txt;
-   document.getElementById("qr").innerText=txt;
- }
-);
-
-function add(n){ weight.value+=n; }
-function clearW(){ weight.value=""; }
-
-function print(){
- if(!qr || !weight.value) return;
  let w=window.open("");
  w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
  w.print();
