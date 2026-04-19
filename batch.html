@@ -2,24 +2,19 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Batch Mode Voice</title>
+<title>Batch Mode</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 body{margin:0;font-family:Arial;display:flex;flex-direction:column;height:100vh}
-
 #top{flex:1;background:#000;color:#fff}
 #reader{height:80%}
-#qr{padding:5px;font-size:14px}
-
+#qr{padding:5px}
 #middle{text-align:center;background:#f4f4f4}
-input{font-size:28px;width:90%;padding:10px;text-align:center}
-
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:5px}
-.keypad button{padding:12px;font-size:18px}
-
+input{font-size:26px;width:90%;padding:10px}
 #listArea{flex:1;overflow:auto}
 table{width:100%;font-size:12px}
+button{padding:10px;margin:5px}
 </style>
 </head>
 
@@ -27,6 +22,11 @@ table{width:100%;font-size:12px}
 
 <div id="top">
 <button onclick="location.href='index.html'">⬅ Back</button>
+
+<button onclick="startApp()" style="background:green;color:white;width:95%">
+START SYSTEM
+</button>
+
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
 </div>
@@ -36,90 +36,91 @@ table{width:100%;font-size:12px}
 </div>
 
 <div id="listArea">
-<table id="list">
-<tr><th>QR</th><th>CT</th></tr>
-</table>
+<table id="list"><tr><th>QR</th><th>CT</th></tr></table>
 <h3 id="total">Total: 0</h3>
 </div>
 
 <script>
-let qr="", batch=[];
+let qr="",batch=[],scanner;
 
-// 🔊 Speak
-function speak(text, cb){
- let u=new SpeechSynthesisUtterance(text);
- u.onend=()=>cb && cb();
+// speak
+function speak(t,cb){
+ let u=new SpeechSynthesisUtterance(t);
+ u.onend=()=>cb&&cb();
  speechSynthesis.cancel();
  speechSynthesis.speak(u);
 }
 
-// 🔔 Beep
+// beep
 function beep(){
  let ctx=new AudioContext();
  let o=ctx.createOscillator();
  o.connect(ctx.destination);
  o.start();
- setTimeout(()=>o.stop(),120);
+ setTimeout(()=>o.stop(),100);
 }
 
-// 🎤 Listen
-function listen(callback){
+// listen
+function listen(cb){
  let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
  rec.start();
-
- rec.onresult=(e)=>{
-   let t=e.results[0][0].transcript.toLowerCase();
-   callback(t);
- };
+ rec.onresult=e=>cb(e.results[0][0].transcript.toLowerCase());
 }
 
-// Convert speech → number
+// parse
 function parseWeight(t){
  t=t.replace(/one/gi,"1").replace(/two/gi,"2")
-    .replace(/three/gi,"3").replace(/four/gi,"4")
-    .replace(/five/gi,"5").replace(/six/gi,"6")
-    .replace(/seven/gi,"7").replace(/eight/gi,"8")
-    .replace(/nine/gi,"9").replace(/zero/gi,"0")
-    .replace(/point/gi,".");
-
+ .replace(/three/gi,"3").replace(/four/gi,"4")
+ .replace(/five/gi,"5").replace(/six/gi,"6")
+ .replace(/seven/gi,"7").replace(/eight/gi,"8")
+ .replace(/nine/gi,"9").replace(/zero/gi,"0")
+ .replace(/point/gi,".");
  return parseFloat(t).toFixed(2);
 }
 
-// 🔄 FULL FLOW
+// start system
+function startApp(){
+ let ctx=new AudioContext();
+ ctx.resume();
+
+ speak("System ready");
+
+ scanner=new Html5Qrcode("reader");
+
+ scanner.start(
+  {facingMode:"environment"},
+  {fps:10,qrbox:200},
+  txt=>{
+   qr=txt;
+   qrText.innerText=txt;
+
+   startFlow();
+  }
+ );
+}
+
+// flow
 function startFlow(){
-
- // Speak QR
  let parts=qr.split("|");
- speak(parts.join(" "), ()=>{
 
-   // Beep → listen weight
-   beep();
+ speak(parts.join(" "),()=>{
+  beep();
 
-   listen(txt=>{
-     let w=parseWeight(txt);
-     weight.value=w;
+  listen(txt=>{
+   let w=parseWeight(txt);
+   weight.value=w;
 
-     // Confirm weight
-     speak(w+" carat", ()=>{
-
-       // Listen for OK
-       listen(confirm=>{
-         if(confirm.includes("ok") || confirm.includes("okay")){
-           saveAndPrint(w);
-         } else {
-           speak("Repeat weight");
-         }
-       });
-
-     });
-
+   speak(w+" carat",()=>{
+    savePrint(w);
    });
+
+  });
 
  });
 }
 
-// Save + Print
-function saveAndPrint(w){
+// save + print
+function savePrint(w){
  batch.push({qr:qr,w:w});
  update();
 
@@ -134,15 +135,12 @@ function saveAndPrint(w){
  </div>
  `);
  win.print();
-
- weight.value="";
 }
 
-// Update table
+// update
 function update(){
- let t=document.getElementById("list");
+ let t=list;
  t.innerHTML="<tr><th>QR</th><th>CT</th></tr>";
-
  let total=0;
 
  batch.forEach(i=>{
@@ -152,18 +150,6 @@ function update(){
 
  totalEl.innerText="Total: "+total.toFixed(2);
 }
-
-// Scanner
-new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:200},
- txt=>{
-   qr=txt;
-   qrText.innerText=txt;
-
-   startFlow(); // AUTO START
- }
-);
 </script>
 
 </body>
