@@ -6,37 +6,64 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { margin:0; font-family:Arial; background:#fafafa; text-align:center; }
+body{
+  margin:0;
+  font-family:Arial;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
 
-#qr { font-size:14px; font-weight:bold; }
+/* TOP */
+#top{
+  flex:1;
+  background:#000;
+  color:white;
+}
 
-input {
-  font-size:28px;
-  padding:10px;
-  width:90%;
+#reader{
+  height:80%;
+}
+
+#qr{
+  font-size:12px;
+  padding:5px;
+}
+
+/* MIDDLE */
+#middle{
+  background:#f4f4f4;
   text-align:center;
 }
 
-.keypad {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
+input{
+  font-size:26px;
+  width:90%;
   padding:10px;
 }
 
-.keypad button {
-  font-size:20px;
-  padding:15px;
+/* KEYPAD */
+.keypad{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+  padding:5px;
+}
+
+.keypad button{
+  padding:12px;
+  font-size:18px;
   border:none;
-  border-radius:10px;
   background:#e0e0e0;
 }
 
-.keypad button:active {
-  background:#bdbdbd;
+/* LIST */
+#listArea{
+  flex:1;
+  overflow:auto;
 }
 
-table {
+table{
   width:100%;
   font-size:12px;
 }
@@ -46,11 +73,13 @@ table {
 
 <body>
 
+<div id="top">
 <button onclick="location.href='index.html'">⬅</button>
-
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
+</div>
 
+<div id="middle">
 <input id="weight" readonly placeholder="0.00">
 
 <div class="keypad">
@@ -69,33 +98,34 @@ table {
 <button onclick="clearW()">C</button>
 <button style="grid-column:span 2;" onclick="save()">SAVE</button>
 </div>
+</div>
 
+<div id="listArea">
 <table id="list">
 <tr><th>QR</th><th>CT</th></tr>
 </table>
-
 <h3 id="total">Total: 0</h3>
+</div>
 
 <script>
 let qr="", batch=[];
 
 new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:200},
+ { facingMode:"environment" },
+ { fps:10, qrbox:200 },
  txt=>{
    qr=txt;
-   qrText.innerText=txt;
-   weight.focus();
+   document.getElementById("qr").innerText=txt;
  }
 );
 
 function add(n){
  if(n==="." && weight.value.includes(".")) return;
- weight.value += n;
+ weight.value+=n;
 }
 
 function del(){
- weight.value = weight.value.slice(0,-1);
+ weight.value=weight.value.slice(0,-1);
 }
 
 function clearW(){
@@ -106,134 +136,6 @@ function save(){
  if(!qr || !weight.value) return;
 
  batch.push({qr:qr,w:weight.value});
- update();
-
- let w=window.open("");
- w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
- w.print();
-
- weight.value="";
-}
-
-function update(){
- let t=document.getElementById("list");
- t.innerHTML="<tr><th>QR</th><th>CT</th></tr>";
-
- let total=0;
-
- batch.forEach(i=>{
-  t.innerHTML+=`<tr><td>${i.qr}</td><td>${i.w}</td></tr>`;
-  total+=parseFloat(i.w);
- });
-
- document.getElementById("total").innerText="Total: "+total.toFixed(2);
-}
-</script>
-
-</body>
-</html>table { width:100%; font-size:12px; }
-</style>
-</head>
-
-<body>
-
-<div id="top">
-<button onclick="location.href='index.html'">⬅</button>
-<div id="reader"></div>
-<div id="qr">Scan QR...</div>
-</div>
-
-<div id="middle">
-<input id="weight" placeholder="0.00">
-
-<div class="keypad">
-<button onclick="add('1')">1</button>
-<button onclick="add('2')">2</button>
-<button onclick="add('3')">3</button>
-<button onclick="add('4')">4</button>
-<button onclick="add('5')">5</button>
-<button onclick="add('6')">6</button>
-<button onclick="add('7')">7</button>
-<button onclick="add('8')">8</button>
-<button onclick="add('9')">9</button>
-<button onclick="add('.')">.</button>
-<button onclick="add('0')">0</button>
-<button onclick="clearW()">C</button>
-<button style="grid-column: span 3;" onclick="save()">SAVE + PRINT</button>
-</div>
-</div>
-
-<div id="bottom">
-<table id="list">
-<tr><th>QR</th><th>CT</th></tr>
-</table>
-<h3 id="total">Total: 0</h3>
-</div>
-
-<script>
-let qr="", batch=[];
-
-new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:200},
- txt=>{
-   qr=txt;
-   document.getElementById("qr").innerText=txt;
- }
-);
-
-function add(n){ weight.value+=n; }
-function clearW(){ weight.value=""; }
-
-function save(){
- if(!qr || !weight.value) return;
-
- batch.push({qr:qr,w:weight.value});
- update();
-
- let w=window.open("");
- w.document.write(`<h2>${qr}</h2><h1>${weight.value} CT</h1>`);
- w.print();
-
- weight.value="";
-}
-
-function update(){
- let t=document.getElementById("list");
- t.innerHTML="<tr><th>QR</th><th>CT</th></tr>";
-
- let total=0;
-
- batch.forEach(i=>{
-  t.innerHTML+=`<tr><td>${i.qr}</td><td>${i.w}</td></tr>`;
-  total+=parseFloat(i.w);
- });
-
- document.getElementById("total").innerText="Total: "+total.toFixed(2);
-}
-</script>
-
-</body>
-</html></table>
-
-<h3 id="total">Total: 0</h3>
-
-<script>
-let qr="", batch=[];
-
-new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:250},
- txt=>{
-   qr=txt;
-   document.getElementById("qr").innerText=txt;
- }
-);
-
-function save(){
- if(!qr || !weight.value) return;
-
- batch.push({qr:qr, w:weight.value});
  update();
 
  let w=window.open("");
