@@ -101,6 +101,20 @@ button:hover {
   background-color: #1E88E5;
 }
 
+#top .controls .connect-button {
+  background: #673AB7; /* Deep Purple */
+}
+#top .controls .connect-button:hover {
+  background-color: #512DA8;
+}
+
+#top .controls .test-print-button {
+  background: #00BCD4; /* Cyan */
+}
+#top .controls .test-print-button:hover {
+  background-color: #0097A7;
+}
+
 #reader{
   width: 100%;
   height: 200px; /* Fixed height for QR reader for consistency */
@@ -114,11 +128,25 @@ button:hover {
   padding: 10px;
   font-size: 18px;
   font-weight: 500;
-  background: #222;
+  background: var(--background-dark); /* Changed for consistency */
   border-radius: 8px;
   width: calc(100% - 20px);
   text-align: center;
   margin-top: 10px;
+}
+
+#speechStatus { /* NEW CSS */
+  padding: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  background: var(--background-dark);
+  color: var(--text-color-dark);
+  border-radius: 8px;
+  width: calc(100% - 20px);
+  text-align: center;
+  margin-top: 10px;
+  min-height: 20px;
+  visibility: hidden;
 }
 
 /* BOTTOM SECTION */
@@ -224,10 +252,17 @@ input#weight{
     <button onclick="toggleMode()" class="mode-button">
       MODE: <span id="mode">AUTO</span>
     </button>
+    <button onclick="connectBluetoothPrinter()" class="connect-button">
+      Connect Printer
+    </button>
+    <button onclick="testBluetoothPrint()" class="test-print-button">
+      Test Print
+    </button>
   </div>
 
   <div id="reader"></div>
   <div id="qr">Scan QR...</div>
+  <div id="speechStatus"></div>
 </div>
 
 <div id="bottom">
@@ -252,7 +287,20 @@ input#weight{
 </div>
 
 <script>
-let qr="", scanner, autoMode=true;
+let qr="", scanner, autoMode=true, speechStatusElement;
+
+// Bluetooth variables for printer
+let bluetoothDevice = null;
+let printCharacteristic = null;
+// *** IMPORTANT: Replace these with your Phomemo D30's actual Bluetooth Service and Characteristic UUIDs ***
+// You might find these using a BLE scanner app (e.g., nRF Connect) or printer documentation.
+const PHOMEMO_SERVICE_UUID = null; // Example: '000018f0-0000-1000-8000-00805f9b34fb' (common for some printers)
+const PHOMEMO_CHAR_UUID = null;    // Example: '00002af1-0000-1000-8000-00805f9b34fb' (common for some printers)
+
+window.onload=()=>{
+ speechStatusElement = document.getElementById("speechStatus");
+ // The 'user' input from index.html is not present here, so no need to check localStorage for 'user'
+};
 
 // 🔄 MODE SWITCH
 function toggleMode(){
@@ -277,18 +325,70 @@ function beep(){
  setTimeout(()=>o.stop(),120);
 }
 
+// Helper function to update speech status
+function setSpeechStatus(message, bgColor = 'var(--background-dark)', textColor = 'var(--text-color-dark)', visibility = 'visible') {
+  speechStatusElement.innerText = message;
+  speechStatusElement.style.backgroundColor = bgColor;
+  speechStatusElement.style.color = textColor;
+  speechStatusElement.style.visibility = visibility;
+}
+
 // 🎤 LISTEN
-function listen(cb){
- let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
- rec.start();
- rec.onresult=e=>{
-  let transcript = e.results[0][0].transcript.toLowerCase();
-  console.log("Speech Recognition Raw Transcript:", transcript); // Debug log
-  cb(transcript);
- };
- rec.onerror = e => {
-    console.error("Speech Recognition Error:", e.error); // Log errors
- };
+function listen(onSuccess, onError){
+  let rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  let recognitionActive = true; // Flag to track if recognition is still active
+  let timeoutId; // To store the timeout ID
+
+  rec.start();
+
+  rec.onstart = () => {
+    setSpeechStatus("Listening... Speak now!", "var(--secondary-color)");
+    // Start a timeout. If no speech is detected within X seconds, stop recognition.
+    timeoutId = setTimeout(() => {
+      if (recognitionActive) { // Only stop if not already handled by onresult/onerror
+        rec.stop();
+        setSpeechStatus("No speech detected. Timeout.", "#F44336"); // Red for error
+        onError("No speech detected within the time limit.");
+        recognitionActive = false; // Mark as inactive
+      }
+    }, 5000); // 5 seconds timeout
+  };
+
+  rec.onresult = e => {
+    clearTimeout(timeoutId); // Clear timeout as speech was detected
+    if (!recognitionActive) return; // Prevent double handling if timeout already fired
+
+    setSpeechStatus("Processing speech...", "var(--accent-color)");
+    let transcript = e.results[0][0].transcript.toLowerCase();
+    console.log("Speech Recognition Raw Transcript:", transcript);
+    recognitionActive = false; // Mark as inactive
+    if (transcript) {
+      onSuccess(transcript);
+    } else {
+      onError("No speech recognized.");
+    }
+  };
+
+  rec.onerror = e => {
+    clearTimeout(timeoutId); // Clear timeout as an error occurred
+    if (!recognitionActive) return; // Prevent double handling if timeout already fired
+
+    console.error("Speech Recognition Error:", e.error);
+    setSpeechStatus("Error: " + e.error, "#F44336");
+    recognitionActive = false; // Mark as inactive
+    onError("Speech recognition failed: " + e.error);
+  };
+
+  rec.onend = () => {
+    // This event fires after onresult/onerror/onnomatch/stop()
+    // No need to call onError again if recognitionActive is already false
+    if (recognitionActive) { // If recognition ended without onresult/onerror firing
+      clearTimeout(timeoutId);
+      setSpeechStatus("Speech recognition ended unexpectedly.", "#F44336");
+      onError("Speech recognition ended unexpectedly.");
+      recognitionActive = false;
+    }
+  };
 }
 
 // parse voice
@@ -303,8 +403,8 @@ function parseWeight(t){
  let parsedFloat = parseFloat(t);
  console.log("parseWeight - After replacements:", t, "Parsed Float:", parsedFloat); // Debug log
  if (isNaN(parsedFloat)) {
-    console.warn("parseWeight - Failed to parse float, returning '0.00'");
-    return "0.00"; // Return a default or handle error
+    console.warn("parseWeight - Failed to parse float, returning null");
+    return null; // Return null instead of "0.00" to signify failure
  }
  return parsedFloat.toFixed(2);
 }
@@ -315,7 +415,9 @@ function startApp(){
  let ctx=new AudioContext();
  ctx.resume();
 
- speak("System ready");
+ speak("System ready", () => {
+    setSpeechStatus("Scan QR...", "#607D8B", "white", "visible"); // Initial status after system ready
+ });
 
  scanner=new Html5Qrcode("reader");
 
@@ -333,6 +435,7 @@ function startApp(){
 
     qr=txt;
     document.getElementById("qr").innerText=txt;
+    setSpeechStatus("QR Scanned. Ready for voice command.", "#607D8B", "white", "visible");
 
     if(navigator.vibrate) navigator.vibrate(100);
 
@@ -355,43 +458,109 @@ function startFlow(){
  speak(parts.join(" "),()=>{
   beep();
 
-  listen(txt=>{
-    let w=parseWeight(txt);
-    weight.value=w;
+  listen(
+    txt => { // onSuccess callback
+      setSpeechStatus("Speech recognized!", "var(--primary-color)"); // Green for success
+      let w=parseWeight(txt);
+      if (w === null) {
+        speak("Could not understand the weight. Please try again or use manual input.", () => {
+          setSpeechStatus("Ready for input or scan", "#607D8B", "white", "visible"); // Greyish
+          restartScanner(); // Restart scanner or allow manual input
+        });
+        return;
+      }
+      weight.value=w;
 
-    speak(w+" carat",()=>{
-      print(w);
-    });
-  });
+      speak(w+" carat",()=>{
+        print(w);
+        setSpeechStatus("Ready for input or scan", "#607D8B", "white", "visible"); // Reset after print
+      });
+    },
+    errorMsg => { // onError callback
+      speak(errorMsg + " Please try again or use manual input.", () => {
+        setSpeechStatus("Ready for input or scan", "#607D8B", "white", "visible"); // Greyish
+        restartScanner(); // Restart scanner or allow manual input
+      });
+    }
+  );
 
  });
 }
 
-// 🖨️ PRINT
+// 🖨️ PRINT via browser's print dialog
+function printToBrowser(content) {
+  let win = window.open("");
+  win.document.write(content);
+  win.print();
+}
+
+// 🖨️ PRINT via Bluetooth
+async function printViaBluetooth(data) {
+  if (!printCharacteristic) {
+    console.error("No Bluetooth printer connected or characteristic not found.");
+    setSpeechStatus("No Bluetooth printer connected. Printing normally.", "#FFC107");
+    printToBrowser(data); // Fallback to normal browser print
+    return;
+  }
+
+  try {
+    setSpeechStatus("Sending print data via Bluetooth...", "var(--secondary-color)");
+    // *** IMPORTANT: The data format depends entirely on the Phomemo D30 printer. ***
+    // This is a placeholder. You'll need to figure out the exact byte sequence
+    // for text, images, or commands for your printer.
+    // For example, to send simple text (you might need more complex commands):
+    const encoder = new TextEncoder();
+    const textData = encoder.encode(data);
+    await printCharacteristic.writeValue(textData);
+    setSpeechStatus("Print data sent successfully via Bluetooth!", "var(--primary-color)");
+  } catch (error) {
+    console.error('Failed to send data via Bluetooth:', error);
+    setSpeechStatus(`Bluetooth print failed: ${error.message}. Printing normally.`, "#F44336");
+    printToBrowser(data); // Fallback to normal browser print
+  }
+}
+
+// 🖨️ Main PRINT function
 function print(w){
  let p=qr.split("|");
 
- let win=window.open("");
- win.document.write(`
+ // Prepare content for printing
+ const printContent = `
  <div style="text-align:center">
  <h2>${p[0]}</h2>
  <div>${p.slice(1,3).join("|")}</div>
  <h1>${w} CT</h1>
  </div>
- `);
- win.print();
+ `;
 
+ // Confirmation prompt
+ if (!confirm(`Confirm print for ${p[0]} with weight ${w} CT?`)) {
+    setSpeechStatus("Print cancelled.", "#FFC107"); // Amber for cancelled
+    restartScanner();
+    return;
+ }
+
+  // Attempt Bluetooth print if a printer is connected, otherwise fallback to browser print
+  if (bluetoothDevice && printCharacteristic) {
+    printViaBluetooth(printContent); // Attempt Bluetooth print
+  } else {
+    printToBrowser(printContent); // Fallback to browser print
+  }
+
+ setSpeechStatus("Ready for input or scan", "#607D8B", "white", "visible"); // Reset after print
  restartScanner();
 }
 
 // 🔁 RESTART SCANNER
 function restartScanner(){
+ setSpeechStatus("Scan QR...", "#607D8B", "white", "visible"); // Status when scanner restarts
  scanner.start(
   { facingMode: { exact: "environment" } },
   { fps:20, qrbox:200 },
   txt=>{
     qr=txt;
     document.getElementById("qr").innerText=txt;
+    setSpeechStatus("QR Scanned. Ready for voice command.", "#607D8B", "white", "visible");
 
     if(navigator.vibrate) navigator.vibrate(100);
 
@@ -402,6 +571,89 @@ function restartScanner(){
     }
   }
  );
+}
+
+// 🔌 BLUETOOTH CONNECT
+async function connectBluetoothPrinter() {
+  if (!navigator.bluetooth) {
+    setSpeechStatus("Web Bluetooth is not supported in this browser.", "#F44336");
+    console.error("Web Bluetooth not supported.");
+    return;
+  }
+
+  try {
+    setSpeechStatus("Searching for Bluetooth printer...", "var(--secondary-color)");
+
+    const filters = [];
+    // If specific UUIDs are known, add them to the filters array.
+    // Example: filters.push({ services: [PHOMEMO_SERVICE_UUID] });
+    // For generic discovery, you might filter by name or leave filters empty and use acceptAllDevices: true
+    // For now, allowing all devices for discovery if UUIDs are not set
+
+    const options = {
+      filters: PHOMEMO_SERVICE_UUID ? [{ services: [PHOMEMO_SERVICE_UUID] }] : [],
+      optionalServices: PHOMEMO_SERVICE_UUID ? [PHOMEMO_SERVICE_UUID] : [], // Include if needed for discovery
+      acceptAllDevices: !PHOMEMO_SERVICE_UUID // If no service UUID, allow all devices
+    };
+
+    const device = await navigator.bluetooth.requestDevice(options);
+
+    setSpeechStatus(`Connecting to ${device.name || 'unknown device'}...`, "var(--secondary-color)");
+    const server = await device.gatt.connect();
+
+    // If PHOMEMO_SERVICE_UUID is set, try to get the service and characteristic
+    if (PHOMEMO_SERVICE_UUID && PHOMEMO_CHAR_UUID) {
+      const service = await server.getPrimaryService(PHOMEMO_SERVICE_UUID);
+      const characteristic = await service.getCharacteristic(PHOMEMO_CHAR_CHAR_UUID);
+
+      bluetoothDevice = device;
+      printCharacteristic = characteristic;
+      setSpeechStatus(`Connected to ${device.name || 'unknown device'}! Ready for Bluetooth print.`, "var(--primary-color)");
+    } else {
+      setSpeechStatus(`Connected to ${device.name || 'unknown device'}, but printer UUIDs are missing. Cannot print via Bluetooth.`, "#FFC107");
+      console.warn("Connected to Bluetooth device, but PHOMEMO_SERVICE_UUID or PHOMEMO_CHAR_UUID are not set. Bluetooth printing might not work.");
+      // For debugging, you might list services/characteristics here
+      // const services = await server.getPrimaryServices();
+      // services.forEach(async service => {
+      //   console.log('Service:', service.uuid);
+      //   const characteristics = await service.getCharacteristics();
+      //   characteristics.forEach(char => console.log('  Characteristic:', char.uuid));
+      // });
+    }
+
+    device.addEventListener('gattserverdisconnected', onBluetoothDisconnected);
+  } catch (error) {
+    console.error('Bluetooth connection failed:', error);
+    setSpeechStatus(`Bluetooth connection failed: ${error.message}`, "#F44336");
+    bluetoothDevice = null;
+    printCharacteristic = null;
+  }
+}
+
+function onBluetoothDisconnected() {
+  console.log('Bluetooth device disconnected.');
+  bluetoothDevice = null;
+  printCharacteristic = null;
+  setSpeechStatus("Bluetooth printer disconnected.", "#FFC107");
+}
+
+// 🖨️ BLUETOOTH TEST PRINT
+async function testBluetoothPrint() {
+  if (!bluetoothDevice || !printCharacteristic) {
+    setSpeechStatus("No Bluetooth printer connected. Please connect one first.", "#FFC107");
+    return;
+  }
+
+  try {
+    setSpeechStatus("Sending test print via Bluetooth...", "var(--secondary-color)");
+    const encoder = new TextEncoder();
+    const testData = encoder.encode("--- TEST PRINT ---\nLine 1\nLine 2\n"); // Basic test string
+    await printCharacteristic.writeValue(testData);
+    setSpeechStatus("Test print sent successfully via Bluetooth!", "var(--primary-color)");
+  } catch (error) {
+    console.error('Test Bluetooth print failed:', error);
+    setSpeechStatus(`Test print failed: ${error.message}`, "#F44336");
+  }
 }
 
 // 🔢 MANUAL INPUT
