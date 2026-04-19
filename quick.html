@@ -6,43 +6,13 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
-
-/* TOP */
-#top{
-  flex:1;
-  background:#000;
-  color:#fff;
-}
-
-#reader{
-  height:80%;
-}
-
-#qr{
-  padding:5px;
-  font-size:14px;
-}
-
-/* BOTTOM */
-#bottom{
-  flex:1;
-  background:#f4f4f4;
-  text-align:center;
-}
-
-input{
-  font-size:30px;
-  width:90%;
-  padding:10px;
-  text-align:center;
-}
+body{margin:0;font-family:Arial;display:flex;flex-direction:column;height:100vh}
+#top{flex:1;background:#000;color:#fff}
+#reader{height:80%}
+#qr{padding:5px}
+#bottom{flex:1;text-align:center;background:#f4f4f4}
+input{font-size:30px;width:90%;padding:10px;text-align:center}
+button{padding:12px;margin:5px;font-size:16px}
 </style>
 </head>
 
@@ -50,6 +20,11 @@ input{
 
 <div id="top">
 <button onclick="location.href='index.html'">⬅ Back</button>
+
+<button onclick="startApp()" style="background:green;color:white;width:95%">
+START SYSTEM
+</button>
+
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
 </div>
@@ -59,12 +34,12 @@ input{
 </div>
 
 <script>
-let qr="";
+let qr="", scanner;
 
 // 🔊 Speak
-function speak(text, cb){
- let u=new SpeechSynthesisUtterance(text);
- u.onend=()=>cb && cb();
+function speak(t,cb){
+ let u=new SpeechSynthesisUtterance(t);
+ u.onend=()=>cb&&cb();
  speechSynthesis.cancel();
  speechSynthesis.speak(u);
 }
@@ -75,64 +50,73 @@ function beep(){
  let o=ctx.createOscillator();
  o.connect(ctx.destination);
  o.start();
- setTimeout(()=>o.stop(),120);
+ setTimeout(()=>o.stop(),100);
 }
 
 // 🎤 Listen
-function listen(callback){
+function listen(cb){
  let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
  rec.start();
-
- rec.onresult=(e)=>{
-   let t=e.results[0][0].transcript.toLowerCase();
-   callback(t);
- };
+ rec.onresult=e=>cb(e.results[0][0].transcript.toLowerCase());
 }
 
-// Convert speech → number
+// convert voice
 function parseWeight(t){
  t=t.replace(/one/gi,"1").replace(/two/gi,"2")
-    .replace(/three/gi,"3").replace(/four/gi,"4")
-    .replace(/five/gi,"5").replace(/six/gi,"6")
-    .replace(/seven/gi,"7").replace(/eight/gi,"8")
-    .replace(/nine/gi,"9").replace(/zero/gi,"0")
-    .replace(/point/gi,".");
+ .replace(/three/gi,"3").replace(/four/gi,"4")
+ .replace(/five/gi,"5").replace(/six/gi,"6")
+ .replace(/seven/gi,"7").replace(/eight/gi,"8")
+ .replace(/nine/gi,"9").replace(/zero/gi,"0")
+ .replace(/point/gi,".");
 
  return parseFloat(t).toFixed(2);
 }
 
-// 🚀 FULL AUTO FLOW
-function startFlow(){
+// start system (IMPORTANT)
+function startApp(){
 
+ // unlock audio
+ let ctx=new AudioContext();
+ ctx.resume();
+
+ speak("System ready");
+
+ scanner=new Html5Qrcode("reader");
+
+ scanner.start(
+  {facingMode:"environment"},
+  {fps:10,qrbox:200},
+  txt=>{
+   qr=txt;
+   qrText.innerText=txt;
+
+   startFlow();
+  }
+ );
+}
+
+// flow
+function startFlow(){
  let parts=qr.split("|");
 
- // Speak QR
- speak(parts.join(" "), ()=>{
+ speak(parts.join(" "),()=>{
+  beep();
 
-   // Beep → listen weight
-   beep();
+  listen(txt=>{
+   let w=parseWeight(txt);
+   weight.value=w;
 
-   listen(txt=>{
-     let w=parseWeight(txt);
-     weight.value=w;
-
-     // Speak confirmation
-     speak(w+" carat", ()=>{
-
-       // AUTO PRINT (no OK step)
-       print(w);
-
-     });
-
+   speak(w+" carat",()=>{
+    print(w);
    });
+
+  });
 
  });
 }
 
-// Print
+// print
 function print(w){
- if(!qr || !w) return;
-
  let p=qr.split("|");
 
  let win=window.open("");
@@ -145,18 +129,6 @@ function print(w){
  `);
  win.print();
 }
-
-// Scanner
-new Html5Qrcode("reader").start(
- {facingMode:"environment"},
- {fps:10,qrbox:200},
- txt=>{
-   qr=txt;
-   qrText.innerText=txt;
-
-   startFlow(); // auto start
- }
-);
 </script>
 
 </body>
