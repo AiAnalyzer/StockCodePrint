@@ -6,13 +6,64 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body{margin:0;font-family:Arial;display:flex;flex-direction:column;height:100vh}
-#top{flex:1;background:#000;color:#fff}
-#reader{height:80%}
-#qr{padding:5px}
-#bottom{flex:1;text-align:center;background:#f4f4f4}
-input{font-size:30px;width:90%;padding:10px;text-align:center}
-button{padding:12px;margin:5px;font-size:16px}
+body{
+  margin:0;
+  font-family:Arial;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+
+/* TOP */
+#top{
+  height:45%;
+  background:#000;
+  color:#fff;
+}
+
+#reader{
+  width:100%;
+  height:80%;
+}
+
+#qr{
+  padding:8px;
+  font-size:20px;
+  font-weight:bold;
+  background:#111;
+}
+
+/* BOTTOM */
+#bottom{
+  height:55%;
+  text-align:center;
+  background:#f4f4f4;
+}
+
+input{
+  font-size:32px;
+  width:90%;
+  padding:10px;
+  text-align:center;
+}
+
+/* keypad */
+.keypad{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+  padding:5px;
+}
+
+.keypad button{
+  font-size:20px;
+  padding:15px;
+}
+
+.action{
+  background:#1976d2;
+  color:#fff;
+}
 </style>
 </head>
 
@@ -25,18 +76,47 @@ button{padding:12px;margin:5px;font-size:16px}
 START SYSTEM
 </button>
 
+<button onclick="toggleMode()" style="width:95%">
+MODE: <span id="mode">AUTO</span>
+</button>
+
 <div id="reader"></div>
 <div id="qr">Scan QR...</div>
 </div>
 
 <div id="bottom">
+
 <input id="weight" readonly placeholder="0.00">
+
+<div class="keypad">
+<button onclick="add('1')">1</button>
+<button onclick="add('2')">2</button>
+<button onclick="add('3')">3</button>
+<button onclick="add('4')">4</button>
+<button onclick="add('5')">5</button>
+<button onclick="add('6')">6</button>
+<button onclick="add('7')">7</button>
+<button onclick="add('8')">8</button>
+<button onclick="add('9')">9</button>
+<button onclick="add('.')">.</button>
+<button onclick="add('0')">0</button>
+<button onclick="del()">⌫</button>
+<button onclick="clearW()">C</button>
+<button class="action" style="grid-column:span 2;" onclick="manualPrint()">PRINT</button>
+</div>
+
 </div>
 
 <script>
-let qr="", scanner;
+let qr="", scanner, autoMode=true;
 
-// 🔊 Speak
+// 🔄 MODE SWITCH
+function toggleMode(){
+ autoMode=!autoMode;
+ document.getElementById("mode").innerText = autoMode ? "AUTO" : "MANUAL";
+}
+
+// 🔊 SPEAK
 function speak(t,cb){
  let u=new SpeechSynthesisUtterance(t);
  u.onend=()=>cb&&cb();
@@ -44,23 +124,23 @@ function speak(t,cb){
  speechSynthesis.speak(u);
 }
 
-// 🔔 Beep
+// 🔔 BEEP
 function beep(){
  let ctx=new AudioContext();
  let o=ctx.createOscillator();
  o.connect(ctx.destination);
  o.start();
- setTimeout(()=>o.stop(),100);
+ setTimeout(()=>o.stop(),120);
 }
 
-// 🎤 Listen
+// 🎤 LISTEN
 function listen(cb){
  let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
  rec.start();
  rec.onresult=e=>cb(e.results[0][0].transcript.toLowerCase());
 }
 
-// convert voice
+// parse voice
 function parseWeight(t){
  t=t.replace(/one/gi,"1").replace(/two/gi,"2")
  .replace(/three/gi,"3").replace(/four/gi,"4")
@@ -68,14 +148,12 @@ function parseWeight(t){
  .replace(/seven/gi,"7").replace(/eight/gi,"8")
  .replace(/nine/gi,"9").replace(/zero/gi,"0")
  .replace(/point/gi,".");
-
  return parseFloat(t).toFixed(2);
 }
 
-// start system (IMPORTANT)
+// 🚀 START SYSTEM
 function startApp(){
 
- // unlock audio
  let ctx=new AudioContext();
  ctx.resume();
 
@@ -84,18 +162,35 @@ function startApp(){
  scanner=new Html5Qrcode("reader");
 
  scanner.start(
-  {facingMode:"environment"},
-  {fps:10,qrbox:200},
+  { facingMode: { exact: "environment" } },
+  {
+    fps:20,
+    qrbox:(w,h)=>{
+      let size=Math.min(w,h)*0.8;
+      return {width:size,height:size};
+    }
+  },
   txt=>{
-   qr=txt;
-   qrText.innerText=txt;
+    console.log("QR:",txt);
 
-   startFlow();
+    qr=txt;
+    document.getElementById("qr").innerText=txt;
+
+    if(navigator.vibrate) navigator.vibrate(100);
+
+    scanner.stop();
+
+    if(autoMode){
+      startFlow();
+    }
+  },
+  err=>{
+    // silent
   }
  );
 }
 
-// flow
+// 🔄 AUTO FLOW
 function startFlow(){
  let parts=qr.split("|");
 
@@ -103,19 +198,18 @@ function startFlow(){
   beep();
 
   listen(txt=>{
-   let w=parseWeight(txt);
-   weight.value=w;
+    let w=parseWeight(txt);
+    weight.value=w;
 
-   speak(w+" carat",()=>{
-    print(w);
-   });
-
+    speak(w+" carat",()=>{
+      print(w);
+    });
   });
 
  });
 }
 
-// print
+// 🖨️ PRINT
 function print(w){
  let p=qr.split("|");
 
@@ -128,6 +222,48 @@ function print(w){
  </div>
  `);
  win.print();
+
+ restartScanner();
+}
+
+// 🔁 RESTART SCANNER
+function restartScanner(){
+ scanner.start(
+  { facingMode: { exact: "environment" } },
+  { fps:20, qrbox:200 },
+  txt=>{
+    qr=txt;
+    document.getElementById("qr").innerText=txt;
+
+    if(navigator.vibrate) navigator.vibrate(100);
+
+    scanner.stop();
+
+    if(autoMode){
+      startFlow();
+    }
+  }
+ );
+}
+
+// 🔢 MANUAL INPUT
+function add(n){
+ if(n==="." && weight.value.includes(".")) return;
+ weight.value+=n;
+}
+
+function del(){
+ weight.value=weight.value.slice(0,-1);
+}
+
+function clearW(){
+ weight.value="";
+}
+
+// manual print
+function manualPrint(){
+ if(!qr || !weight.value) return;
+ print(weight.value);
 }
 </script>
 
